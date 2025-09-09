@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import 'dotenv/config';
 import { StatusCodes } from 'http-status-codes';
 import { FastifyRequest, FastifyReply } from 'fastify';

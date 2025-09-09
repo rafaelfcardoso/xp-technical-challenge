@@ -8,12 +8,14 @@ This is a TypeScript/Node.js investment platform API (XP Technical Challenge) th
 
 ## Architecture
 
-The codebase follows the MSC (Model-Service-Controller) layered architecture with Fastify plugin-based organization:
+The codebase follows the MSC (Model-Service-Controller) layered architecture with Fastify plugin-based organization and TypeORM for data persistence:
 
-- **Models** (`src/models/`): Database queries and data access using mysql2
+- **Entities** (`src/entities/`): TypeORM entity definitions with decorators
+- **Repositories** (`src/repositories/`): Data access layer using TypeORM Repository pattern
 - **Services** (`src/services/`): Business logic and validation rules  
 - **Routes** (`src/routes/`): Fastify plugin-based API endpoints organized by domain
-- **Plugins** (`src/plugins/`): Fastify plugins for authentication, error handling, etc.
+- **Plugins** (`src/plugins/`): Fastify plugins for authentication, error handling, and database connection
+- **Migrations** (`src/migrations/`): Database schema version control with TypeORM migrations
 - **Schemas** (`src/schemas/`): TypeScript interfaces and JSON schema definitions
 - **Interfaces** (`src/interfaces/`): TypeScript type definitions (legacy)
 - **Utils** (`src/utils/`): Utilities like JWT handling
@@ -62,6 +64,7 @@ The project includes Docker Compose configuration:
 - App plugin composition: `src/app.ts`
 
 ### Plugin System
+- **TypeORM Plugin** (`src/plugins/typeorm.plugin.ts`): Database connection and ORM initialization
 - **JWT Plugin** (`src/plugins/jwt.plugin.ts`): Authentication middleware
 - **Error Handler** (`src/plugins/error-handler.plugin.ts`): Centralized error handling
 - Routes are organized as plugins in `src/routes/`:

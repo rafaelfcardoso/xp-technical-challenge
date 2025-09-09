@@ -1,8 +1,11 @@
 import { StatusCodes } from "http-status-codes";
+import { InvestmentRepository } from "../repositories/InvestmentRepository";
+import { AssetRepository } from "../repositories/AssetRepository";
 import IOrderBody from "../interfaces/order.interface";
-import assetModel from "../models/asset.model";
-import investmentsModel from "../models/investments.model";
 import HttpException from "../shared/http.exception";
+
+const investmentRepository = new InvestmentRepository();
+const assetRepository = new AssetRepository();
 
 const isValid = (order: IOrderBody) => {
   if (!order.codCliente || typeof order.codCliente !== "number") return false;
@@ -17,63 +20,71 @@ const newBuyOrder = async (order: IOrderBody): Promise<IOrderBody> => {
     throw new HttpException(400, "Dados inválidos!");
   }
 
-  const { insertId } = await investmentsModel.createBuyOrder(order);
+  // Create buy order record
+  const createdOrder = await investmentRepository.createBuyOrder({
+    codCliente: order.codCliente,
+    codAtivo: order.codAtivo,
+    qtdeAtivo: order.qtdeAtivo
+  });
 
-  const buyOrder = { ...order, id: insertId };
+  const buyOrder = { ...order, id: createdOrder.id || 0 };
 
-  const { valor } = await assetModel.getValueById(order.codAtivo);
-
+  // Get asset value
+  const valueResult = await assetRepository.getBrokerAssetValue(order.codAtivo);
+  if (!valueResult) {
+    throw new HttpException(StatusCodes.NOT_FOUND, "Asset not found");
+  }
+  
+  const { valor } = valueResult;
   const clientAsset = { ...order, valor };
 
-  const clientHistory = await assetModel.getByClient(order.codCliente); 
+  // Check if client already has this asset
+  const existingAsset = await assetRepository.findClientAsset(order.codCliente, order.codAtivo);
 
-
-  if (clientHistory.every((asset) => (asset.codAtivo !== order.codAtivo))) {
-    await assetModel.newInvestment(clientAsset);
+  if (!existingAsset) {
+    // Create new client asset entry
+    await assetRepository.createClientAsset({
+      codCliente: order.codCliente,
+      codAtivo: order.codAtivo,
+      qtdeAtivo: order.qtdeAtivo,
+      valor: valor
+    });
   } else {
-    clientHistory.forEach((asset) => {
-      if (asset.codAtivo === order.codAtivo && asset.codCliente === order.codCliente) {
-        return assetModel.updateBuy(clientAsset); // Atualiza a quantia sob custodia.
-      }  
-    })
+    // Update existing client asset quantity
+    await assetRepository.updateClientAssetQuantity(order.codCliente, order.codAtivo, order.qtdeAtivo);
   }
+
   return buyOrder;
 };
 
-const newSellOrder = async (order: IOrderBody): Promise<IOrderBody>=> {
+const newSellOrder = async (order: IOrderBody): Promise<IOrderBody> => {
   if (!isValid(order)) {
     throw new HttpException(StatusCodes.BAD_REQUEST, "Dados inválidos.");
   }
 
-  const { valor } = await assetModel.getValueById(order.codAtivo); // Obtem o valor da acao
-
-  const clientAsset = { ...order, valor }; // Insere o valor unitario na ordem
-
-  const clientHistory = await assetModel.getByClient(order.codCliente); 
-
-  if (clientHistory.length) {
-    clientHistory.forEach(async (asset) => {
-      if (asset.codAtivo === order.codAtivo) {
-        
-        if (asset.qtdeAtivo <= order.qtdeAtivo) {
-          return order.message = "Valor da venda é maior que a quantia sob custódia.";
-        }
-
-        assetModel.updateSell(clientAsset); // Atualiza a quantia sob custodia 
-        const { insertId } = await investmentsModel.createSellOrder(order);
-
-        const sellOrder = { ...order, id: insertId };
-
-        return sellOrder;
-
-      } else {
-        return order.message =`Ativo ${order.codAtivo} não encontrado para o cliente ${order.codCliente}.`
-      }
-    })
+  // Check if client owns the asset
+  const clientAsset = await assetRepository.findClientAsset(order.codCliente, order.codAtivo);
+  
+  if (!clientAsset) {
+    return { ...order, message: `Ativo ${order.codAtivo} não encontrado para o cliente ${order.codCliente}.` };
   }
-  return order;
-};
 
+  if (clientAsset.qtdeAtivo <= order.qtdeAtivo) {
+    return { ...order, message: "Valor da venda é maior que a quantia sob custódia." };
+  }
+
+  // Update client asset quantity (decrease)
+  await assetRepository.decrementClientAssetQuantity(order.codCliente, order.codAtivo, order.qtdeAtivo);
+
+  // Create sell order record
+  const createdSellOrder = await investmentRepository.createSellOrder({
+    codCliente: order.codCliente,
+    codAtivo: order.codAtivo,
+    qtdeAtivo: order.qtdeAtivo
+  });
+
+  return { ...order, id: createdSellOrder.id };
+};
 
 export default {
   newBuyOrder,

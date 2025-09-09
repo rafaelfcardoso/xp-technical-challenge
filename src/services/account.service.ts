@@ -1,7 +1,9 @@
+import { AccountRepository } from "../repositories/AccountRepository";
 import ITransaction from "../interfaces/transaction.interface";
-import accountModel from "../models/account.model";
 import HttpException from "../shared/http.exception";
 import { StatusCodes } from "http-status-codes";
+
+const accountRepository = new AccountRepository();
 
 const isValidField = (order: ITransaction) => {
   if (!order.codCliente || typeof order.codCliente !== "number") return false;
@@ -16,7 +18,6 @@ const isValid = (order: ITransaction) => {
   return true;
 };
 
-
 const createDeposit = async (deposit: ITransaction): Promise<ITransaction> => {
   if (!isValidField(deposit)) {
     throw new HttpException(StatusCodes.BAD_REQUEST, "Dados inválidos!");
@@ -26,12 +27,16 @@ const createDeposit = async (deposit: ITransaction): Promise<ITransaction> => {
     throw new HttpException(StatusCodes.BAD_REQUEST, "Quantidade a ser depositada não poderá ser negativa ou igual a zero.");
   }
 
-  const { insertId } = await accountModel.createDeposit(deposit);
+  const createdDeposit = await accountRepository.createDeposit({
+    codCliente: deposit.codCliente,
+    valor: deposit.valor
+  });
 
-  const newDeposit = { ...deposit, id: insertId };
-
-  return newDeposit;
-}
+  return {
+    ...deposit,
+    id: createdDeposit.id
+  };
+};
 
 const createWithdraw = async (withdraw: ITransaction): Promise<ITransaction> => {
   if (!isValidField(withdraw)) {
@@ -39,15 +44,19 @@ const createWithdraw = async (withdraw: ITransaction): Promise<ITransaction> => 
   }
 
   if (!isValid(withdraw)) {
-    throw new HttpException(StatusCodes.BAD_REQUEST, "Quantidade a ser depositada não poderá ser negativa ou igual a zero.");
+    throw new HttpException(StatusCodes.BAD_REQUEST, "Quantidade a ser sacada não poderá ser negativa ou igual a zero.");
   }
 
-  const { insertId } = await accountModel.createWithdraw(withdraw);
+  const createdWithdraw = await accountRepository.createWithdrawal({
+    codCliente: withdraw.codCliente,
+    valor: withdraw.valor
+  });
 
-  const newWithdraw = { ...withdraw, id: insertId };
-
-  return newWithdraw;
-}
+  return {
+    ...withdraw,
+    id: createdWithdraw.id
+  };
+};
 
 export default {
   createDeposit,
