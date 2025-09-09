@@ -16,7 +16,7 @@ export const AppDataSource = new DataSource({
   port: parseInt(process.env.MYSQL_PORT || '3306'),
   username: process.env.MYSQL_USER || 'root',
   password: process.env.MYSQL_PASSWORD || 'password',
-  database: process.env.MYSQL_DATABASE || 'desafio_xp',
+  database: process.env.MYSQL_DATABASE || 'investment_platform',
   synchronize: false, // Never use true in production
   logging: process.env.NODE_ENV === 'development',
   entities: [

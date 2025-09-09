@@ -1,13 +1,13 @@
-import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, PrimaryColumn } from 'typeorm';
 import { PessoaCliente } from './PessoaCliente.entity';
 import { AtivosCorretora } from './AtivosCorretora.entity';
 
 @Entity('ordens_de_compra')
 export class OrdensDeCompra {
-  @Column()
+  @PrimaryColumn()
   codCliente: number;
 
-  @Column()
+  @PrimaryColumn()
   codAtivo: number;
 
   @Column('int')
