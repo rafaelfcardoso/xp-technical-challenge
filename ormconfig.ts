@@ -13,4 +13,5 @@ export default new DataSource({
   entities: ['src/entities/*.entity.ts'],
   migrations: ['src/migrations/*.ts'],
   migrationsTableName: 'migrations',
+  createDatabase: true,
 });

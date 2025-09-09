@@ -1,10 +1,8 @@
-version: "3"
-
 services:
   # Serviço que irá rodar o node
   node:
     # Imagem base do container
-    image: node:16
+    image: node:20
     # Nome do container para facilitar execução
     container_name: desafio-xp
     # Mesmo que `docker run -t`
