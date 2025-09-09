@@ -37,7 +37,7 @@ services:
 
   # Serviço que irá rodar o banco de dados
   db:
-    container_name: db-desafio-xp
+    container_name: db-investment-platform
     image: mysql:8.0.21
     restart: always
     # Lista de portas mapeadas de dentro para fora do container
@@ -48,6 +48,7 @@ services:
       - 33060:33060
     environment:
       MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: investment_platform
 
 # Lista de redes que os containeres irão utilizar
 #networks:
