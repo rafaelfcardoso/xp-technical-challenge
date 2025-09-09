@@ -6,6 +6,8 @@ import server from './server';
 import app from './app';
 import sensible from '@fastify/sensible';
 import cors from '@fastify/cors';
+import swagger from '@fastify/swagger';
+import swaggerUI from '@fastify/swagger-ui';
 
 const PORT = process.env.PORT || 8000;
 
@@ -14,6 +16,20 @@ const start = async () => {
     // Register core plugins first
     await server.register(sensible);
     await server.register(cors, { origin: true });
+
+    // Register Swagger documentation (simplified)
+    await server.register(swagger, {
+      swagger: {
+        info: {
+          title: 'Investment Platform API',
+          version: '1.0.0',
+        },
+      },
+    });
+
+    await server.register(swaggerUI, {
+      routePrefix: '/documentation',
+    });
 
     // Add health check route
     server.get('/', async (request: FastifyRequest, reply: FastifyReply) => {
